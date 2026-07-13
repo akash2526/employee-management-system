@@ -1,100 +1,131 @@
-from dataclasses import asdict
+"""
+Application Routes
+------------------
+This file contains all API endpoints for the Employee Management System.
+"""
 
 from flask import jsonify, request
 
-from app.database import employees
-from app.logger import logger
-from app.models import Employee
+from app.database import employees, update_employee
 from app.utils import validate_employee
 
 
 def register_routes(app):
     """
-    Register all API routes.
+    Register all application routes.
     """
+
+    # ==========================================================
+    # Home API
+    # ==========================================================
 
     @app.route("/")
     def home():
+        """
+        Home endpoint.
+        """
+
         return jsonify({
             "application": "Employee Management System",
-            "version": "1.0.0",
+            "version": "1.0",
             "status": "Running"
         })
 
+    # ==========================================================
+    # Health Check API
+    # ==========================================================
+
     @app.route("/health")
     def health():
+        """
+        Health endpoint.
+        """
+
         return jsonify({
             "status": "Healthy"
         })
 
+    # ==========================================================
+    # Get Employees
+    # ==========================================================
+
     @app.route("/employees", methods=["GET"])
     def get_employees():
-        logger.info("Fetching all employees")
+        """
+        Return all employees.
+        """
 
-        return jsonify(
-            [asdict(employee) for employee in employees]
-        )
+        return jsonify(employees)
 
-    @app.route("/employees/<int:employee_id>", methods=["GET"])
-    def get_employee(employee_id):
-
-        for employee in employees:
-
-            if employee.id == employee_id:
-                return jsonify(asdict(employee))
-
-        return jsonify({
-            "error": "Employee not found"
-        }), 404
+    # ==========================================================
+    # Add Employee
+    # ==========================================================
 
     @app.route("/employees", methods=["POST"])
-    def create_employee():
+    def add_employee():
+        """
+        Add a new employee.
+        """
 
-        data = request.get_json()
+        employee = request.get_json()
 
-        valid, message = validate_employee(data)
-
-        if not valid:
-
+        if not validate_employee(employee):
             return jsonify({
-                "error": message
+                "message": "Invalid Employee Data"
             }), 400
 
-        new_employee = Employee(
-            id=len(employees) + 1,
-            name=data["name"],
-            department=data["department"],
-            designation=data["designation"],
-            salary=data["salary"]
-        )
+        employees.append(employee)
 
-        employees.append(new_employee)
+        return jsonify({
+            "message": "Employee added successfully",
+            "employee": employee
+        }), 201
 
-        logger.info(
-            f"Employee created : {new_employee.name}"
-        )
+    # ==========================================================
+    # Update Employee
+    # ==========================================================
 
-        return jsonify(
-            asdict(new_employee)
-        ), 201
+    @app.route("/employees/<int:employee_id>", methods=["PUT"])
+    def update_employee_route(employee_id):
+        """
+        Update employee details.
+        """
+
+        updated_data = request.get_json()
+
+        employee = update_employee(employee_id, updated_data)
+
+        if employee:
+
+            return jsonify({
+                "message": "Employee updated successfully",
+                "employee": employee
+            }), 200
+
+        return jsonify({
+            "message": "Employee not found"
+        }), 404
+
+    # ==========================================================
+    # Delete Employee
+    # ==========================================================
 
     @app.route("/employees/<int:employee_id>", methods=["DELETE"])
     def delete_employee(employee_id):
+        """
+        Delete employee.
+        """
 
         for employee in employees:
 
-            if employee.id == employee_id:
+            if employee["id"] == employee_id:
 
                 employees.remove(employee)
 
-                logger.info(
-                    f"Employee deleted : {employee.name}"
-                )
-
                 return jsonify({
                     "message": "Employee deleted successfully"
-                })
+                }), 200
 
         return jsonify({
-            "error": "Employee not found"
+            "message": "Employee not found"
         }), 404

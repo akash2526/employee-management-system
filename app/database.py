@@ -1,28 +1,38 @@
-from app.models import Employee
-
 """
-Temporary in-memory database.
-
-Later we will replace this with PostgreSQL
-or Cloud SQL.
-
-Keeping the API separate from the storage
-allows easy migration.
+Mock database for the Employee Management System.
+In a real application, this would connect to MySQL, PostgreSQL, or another database.
 """
 
+# Sample employee records
 employees = [
-    Employee(
-        id=1,
-        name="John Doe",
-        department="IT",
-        designation="Software Engineer",
-        salary=65000,
-    ),
-    Employee(
-        id=2,
-        name="Jane Smith",
-        department="HR",
-        designation="HR Manager",
-        salary=72000,
-    ),
+    {
+        "id": 1,
+        "name": "John Doe",
+        "department": "IT",
+        "designation": "Software Engineer",
+        "salary": 65000
+    },
+    {
+        "id": 2,
+        "name": "Jane Smith",
+        "department": "HR",
+        "designation": "HR Manager",
+        "salary": 72000
+    }
 ]
+
+
+def update_employee(employee_id, updated_data):
+    """
+    Update employee information.
+    """
+
+    for employee in employees:
+
+        if employee["id"] == employee_id:
+
+            employee.update(updated_data)
+
+            return employee
+
+    return None
